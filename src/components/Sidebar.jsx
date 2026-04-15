@@ -5,9 +5,7 @@ export default function Sidebar({ items, activeTab, onTabChange }) {
     <aside className="hidden lg:flex lg:w-[320px] lg:flex-col">
       <div className="sticky top-8 flex h-[calc(100vh-4rem)] flex-col rounded-[34px] border border-white/8 bg-[#262823] p-6 shadow-[0_20px_55px_rgba(0,0,0,0.22)]">
         <div className="rounded-[28px] border border-white/8 bg-[#2d302a] p-5">
-          <LogoMark className="h-20 w-auto" />
-          <p className="mt-3 text-sm text-[#9a9c95]">هوية مشروع رصيد</p>
-          <h1 className="mt-2 text-3xl font-semibold text-white">Rasid</h1>
+          <LogoMark className="h-24 w-auto" />
           <p className="mt-3 text-sm leading-7 text-[#bcbeb7]">
             متابعة الشحنات الحرارية والتنبيهات والمسارات من واجهة واحدة.
           </p>

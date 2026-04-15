@@ -10,8 +10,7 @@ export default function AuthModal({ mode, onModeChange, onClose }) {
       <div className="grid w-full max-w-[1080px] overflow-hidden rounded-[36px] border border-white/10 bg-[#262823] shadow-[0_30px_80px_rgba(0,0,0,0.38)] lg:grid-cols-[1.05fr_0.95fr]">
         <div className="hidden bg-[radial-gradient(circle_at_top,rgba(126,150,145,0.24),transparent_42%),linear-gradient(180deg,#38403a_0%,#2a2d27_100%)] p-8 lg:flex lg:flex-col lg:justify-between">
           <div>
-            <LogoMark className="h-28 w-auto" />
-            <p className="mt-4 text-sm text-[#c9cbc4]">هوية مشروع رصيد</p>
+            <LogoMark className="h-32 w-auto" />
             <h2 className="mt-4 text-5xl font-bold leading-[1.15] text-white">
               تتبع ذكي للشحنات من أول دخول
             </h2>
@@ -92,8 +91,7 @@ export default function AuthModal({ mode, onModeChange, onClose }) {
           </div>
 
           <p className="mt-6 text-center text-xs leading-6 text-[#8f918b]">
-            بالمتابعة، سيتم فتح منصة رصيد وحفظ حالة الدخول الأولى على هذا
-            المتصفح.
+            بالمتابعة، سيتم فتح المنصة وحفظ حالة الدخول الأولى على هذا المتصفح.
           </p>
         </div>
       </div>
