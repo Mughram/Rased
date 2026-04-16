@@ -1,21 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import heroTruck from '../../assets/hero.png'
+import { mapShipments } from '../../data/appData'
 
-const routePoints = [
-  { left: 18, top: 74, label: 'جازان', progress: 0.1 },
-  { left: 30, top: 60, label: 'أبو عريش', progress: 0.3 },
-  { left: 45, top: 49, label: 'بيشة', progress: 0.5 },
-  { left: 63, top: 34, label: 'وادي الدواسر', progress: 0.75 },
-  { left: 79, top: 18, label: 'الرياض', progress: 1 },
-]
-
-function interpolatePosition(progress) {
+function interpolatePosition(points, progress) {
   const safeProgress = Math.min(Math.max(progress, 0), 1)
-  const scaled = safeProgress * (routePoints.length - 1)
+  const scaled = safeProgress * (points.length - 1)
   const index = Math.floor(scaled)
-  const nextIndex = Math.min(index + 1, routePoints.length - 1)
-  const point = routePoints[index]
-  const nextPoint = routePoints[nextIndex]
+  const nextIndex = Math.min(index + 1, points.length - 1)
+  const point = points[index]
+  const nextPoint = points[nextIndex]
   const localProgress = scaled - index
 
   return {
@@ -26,7 +19,12 @@ function interpolatePosition(progress) {
 
 export default function MapMenuView() {
   const [isTracking, setIsTracking] = useState(true)
-  const [progress, setProgress] = useState(0.38)
+  const [selectedShipmentId, setSelectedShipmentId] = useState(mapShipments[0].id)
+  const [progressMap, setProgressMap] = useState(() =>
+    Object.fromEntries(
+      mapShipments.map((shipment) => [shipment.id, shipment.progressStart]),
+    ),
+  )
 
   useEffect(() => {
     if (!isTracking) {
@@ -34,45 +32,95 @@ export default function MapMenuView() {
     }
 
     const intervalId = window.setInterval(() => {
-      setProgress((current) => {
-        const next = current + 0.015
-        return next >= 1 ? 0.1 : next
-      })
+      setProgressMap((current) =>
+        Object.fromEntries(
+          mapShipments.map((shipment) => {
+            const next = (current[shipment.id] ?? shipment.progressStart) + shipment.stepSize
+            return [shipment.id, next >= 1 ? shipment.progressStart : next]
+          }),
+        ),
+      )
     }, 1400)
 
     return () => window.clearInterval(intervalId)
   }, [isTracking])
 
-  const vehiclePosition = interpolatePosition(progress)
-  const completedStops = routePoints.filter((point) => progress >= point.progress).length
-  const distanceLeft = Math.max(12, Math.round((1 - progress) * 248))
-  const etaMinutes = Math.max(8, Math.round((1 - progress) * 95))
+  const selectedShipment =
+    mapShipments.find((shipment) => shipment.id === selectedShipmentId) ?? mapShipments[0]
+  const progress = progressMap[selectedShipment.id] ?? selectedShipment.progressStart
+  const vehiclePosition = interpolatePosition(selectedShipment.points, progress)
+
+  const derivedStats = useMemo(() => {
+    const completedStops = selectedShipment.points.filter(
+      (point) => progress >= point.progress,
+    ).length
+    const distanceLeft = Math.max(8, Math.round((1 - progress) * 260))
+    const etaMinutes = Math.max(6, Math.round((1 - progress) * 110))
+
+    return { completedStops, distanceLeft, etaMinutes }
+  }, [progress, selectedShipment.points])
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-white/8 bg-[#22241f] shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
-      <div className="relative h-[340px] overflow-hidden bg-[#4a5568] sm:h-[400px] lg:h-[440px]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(43,220,255,0.12),transparent_24%),radial-gradient(circle_at_78%_18%,rgba(43,220,255,0.1),transparent_20%),linear-gradient(180deg,#4a5568_0%,#465062_100%)]" />
-        <div className="absolute -left-8 top-0 h-[460px] w-[6px] rotate-[14deg] rounded-full bg-[#24b6c7]/70 shadow-[0_0_25px_rgba(36,182,199,0.45)]" />
-        <div className="absolute left-[24%] top-[-3%] h-[500px] w-[6px] rotate-[-18deg] rounded-full bg-[#24b6c7]/70 shadow-[0_0_25px_rgba(36,182,199,0.45)]" />
-        <div className="absolute right-[8%] top-[-10%] h-[430px] w-[4px] rotate-[24deg] rounded-full bg-[#24b6c7]/45" />
+      <div className="border-b border-white/8 bg-[#2a2d27] px-5 py-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="text-right">
+            <p className="text-sm text-[#a5a9a1]">الخريطة الحية</p>
+            <h2 className="mt-1 text-3xl font-bold text-white">
+              تتبع تفاعلي للشحنات المبردة
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-[#c8cbc4]">
+              اختر أي شحنة لعرض مسارها ونقاط توقفها والتنبيه المرتبط بها بشكل مباشر.
+            </p>
+          </div>
 
-        <div className="absolute left-[6%] top-[18%] h-24 w-32 rounded-[24px] bg-[#313947]/80" />
-        <div className="absolute left-[42%] top-[8%] h-20 w-28 rounded-[20px] bg-[#2f3744]/80" />
-        <div className="absolute right-[10%] top-[20%] h-28 w-36 rounded-[28px] bg-[#303949]/75" />
-        <div className="absolute left-[16%] top-[44%] h-20 w-24 rounded-[22px] bg-[#303847]/75" />
-
-        <div className="absolute inset-x-0 top-0 flex items-start justify-between px-6 pt-5 text-sm text-white/90">
-          <span>12:30</span>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-5 rounded-sm border border-white/70" />
-            <span className="h-2 w-2 rounded-full bg-white/80" />
+          <div className="flex flex-wrap justify-end gap-3">
+            {mapShipments.map((shipment) => (
+              <button
+                key={shipment.id}
+                type="button"
+                onClick={() => setSelectedShipmentId(shipment.id)}
+                className={`rounded-[18px] border px-4 py-3 text-right transition ${
+                  selectedShipmentId === shipment.id
+                    ? 'border-[#8ca7a2] bg-[#8ca7a2] text-white shadow-[0_10px_24px_rgba(34,46,43,0.2)]'
+                    : 'border-white/8 bg-[#34372f] text-[#d4d8d1] hover:border-white/18 hover:bg-[#3c4037]'
+                }`}
+              >
+                <p className="text-xs opacity-80">#{shipment.id}</p>
+                <p className="mt-1 text-sm font-semibold">{shipment.categoryLabel}</p>
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        {routePoints.map((point) => (
-          <div
+      <div className="relative h-[360px] overflow-hidden bg-[#4a5568] sm:h-[420px] lg:h-[460px]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(43,220,255,0.12),transparent_24%),radial-gradient(circle_at_78%_18%,rgba(43,220,255,0.1),transparent_20%),linear-gradient(180deg,#465062_0%,#394452_100%)]" />
+        <div className="absolute -left-8 top-0 h-[460px] w-[6px] rotate-[14deg] rounded-full bg-[#24b6c7]/55 shadow-[0_0_25px_rgba(36,182,199,0.32)]" />
+        <div className="absolute left-[24%] top-[-3%] h-[500px] w-[6px] rotate-[-18deg] rounded-full bg-[#24b6c7]/45 shadow-[0_0_25px_rgba(36,182,199,0.26)]" />
+        <div className="absolute right-[8%] top-[-10%] h-[430px] w-[4px] rotate-[24deg] rounded-full bg-[#24b6c7]/25" />
+
+        <div className="absolute left-[6%] top-[18%] h-24 w-32 rounded-[24px] bg-[#313947]/70" />
+        <div className="absolute left-[42%] top-[8%] h-20 w-28 rounded-[20px] bg-[#2f3744]/65" />
+        <div className="absolute right-[10%] top-[20%] h-28 w-36 rounded-[28px] bg-[#303949]/60" />
+        <div className="absolute left-[16%] top-[44%] h-20 w-24 rounded-[22px] bg-[#303847]/65" />
+
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline
+            fill="none"
+            stroke={selectedShipment.tone === 'danger' ? '#ff8d83' : '#7fe3b4'}
+            strokeDasharray="1.6 1.6"
+            strokeLinecap="round"
+            strokeWidth="0.7"
+            points={selectedShipment.points.map((point) => `${point.left},${point.top}`).join(' ')}
+          />
+        </svg>
+
+        {selectedShipment.points.map((point) => (
+          <button
             key={point.label}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
+            type="button"
+            className="absolute -translate-x-1/2 -translate-y-1/2 text-right"
             style={{ left: `${point.left}%`, top: `${point.top}%` }}
           >
             <div
@@ -85,7 +133,7 @@ export default function MapMenuView() {
             <p className="mt-2 whitespace-nowrap rounded-md bg-black/35 px-2 py-1 text-xs text-white/90">
               {point.label}
             </p>
-          </div>
+          </button>
         ))}
 
         <div
@@ -107,14 +155,17 @@ export default function MapMenuView() {
 
         <div className="absolute bottom-5 left-5 right-5 rounded-[22px] border border-white/10 bg-black/35 p-4 backdrop-blur-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm text-[#bfc4c9]">تتبع مباشر للشحنة #267</p>
-              <p className="mt-2 text-xl font-semibold text-white">
-                السيارة تتحرك الآن باتجاه الرياض
+            <div className="text-right">
+              <p className="text-sm text-[#bfc4c9]">
+                شحنة #{selectedShipment.id} • {selectedShipment.categoryLabel}
               </p>
+              <p className="mt-2 text-xl font-semibold text-white">
+                {selectedShipment.product}
+              </p>
+              <p className="mt-2 text-sm text-[#d4d9dc]">{selectedShipment.alert}</p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 self-end lg:self-auto">
               <button
                 type="button"
                 onClick={() => setIsTracking((value) => !value)}
@@ -134,30 +185,38 @@ export default function MapMenuView() {
         <div className="mx-auto mb-5 h-2 w-28 rounded-full bg-white/90" />
 
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-base text-[#9b9d98]">شحنة رقم</p>
-            <p className="mt-1 text-4xl font-bold text-white">#267</p>
+          <div className="text-right">
+            <p className="text-base text-[#9b9d98]">الشحنة المحددة</p>
+            <p className="mt-1 text-4xl font-bold text-white">#{selectedShipment.id}</p>
           </div>
           <div className="rounded-[18px] bg-[#2d302a] px-4 py-3 text-right">
             <p className="text-xs text-[#99a29d]">آخر تحديث</p>
-            <p className="mt-1 text-lg font-semibold text-white">قبل دقيقة</p>
+            <p className="mt-1 text-lg font-semibold text-white">
+              {selectedShipment.lastUpdate}
+            </p>
           </div>
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[20px] bg-[#2a2c27] p-4">
+          <div className="rounded-[20px] bg-[#2a2c27] p-4 text-right">
             <p className="text-sm text-[#8f918b]">المسافة المتبقية</p>
-            <p className="mt-2 text-3xl font-semibold text-white">{distanceLeft} كم</p>
+            <p className="mt-2 text-3xl font-semibold text-white">
+              {derivedStats.distanceLeft} كم
+            </p>
           </div>
-          <div className="rounded-[20px] bg-[#2a2c27] p-4">
+          <div className="rounded-[20px] bg-[#2a2c27] p-4 text-right">
             <p className="text-sm text-[#8f918b]">الوقت المتوقع</p>
-            <p className="mt-2 text-3xl font-semibold text-white">{etaMinutes} دقيقة</p>
+            <p className="mt-2 text-3xl font-semibold text-white">
+              {derivedStats.etaMinutes} دقيقة
+            </p>
           </div>
-          <div className="rounded-[20px] bg-[#2a2c27] p-4">
+          <div className="rounded-[20px] bg-[#2a2c27] p-4 text-right">
             <p className="text-sm text-[#8f918b]">النقاط المنجزة</p>
-            <p className="mt-2 text-3xl font-semibold text-white">{completedStops}/5</p>
+            <p className="mt-2 text-3xl font-semibold text-white">
+              {derivedStats.completedStops}/{selectedShipment.points.length}
+            </p>
           </div>
-          <div className="rounded-[20px] bg-[#2a2c27] p-4">
+          <div className="rounded-[20px] bg-[#2a2c27] p-4 text-right">
             <p className="text-sm text-[#8f918b]">حالة التتبع</p>
             <p className="mt-2 text-3xl font-semibold text-white">
               {isTracking ? 'نشط' : 'متوقف'}
@@ -167,7 +226,9 @@ export default function MapMenuView() {
 
         <div className="mt-8 h-2 rounded-full bg-[#2d2f2b]">
           <div
-            className="h-full rounded-full bg-[#55d98c] transition-all duration-1000 ease-linear"
+            className={`h-full rounded-full transition-all duration-1000 ease-linear ${
+              selectedShipment.tone === 'danger' ? 'bg-[#f38b84]' : 'bg-[#55d98c]'
+            }`}
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         </div>
@@ -183,32 +244,63 @@ export default function MapMenuView() {
 
           <div className="grid gap-6">
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-sm text-[#8f918b]">محطة المغادرة</p>
+              <div className="text-right">
+                <p className="text-sm text-[#8f918b]">محطة الانطلاق</p>
                 <p className="mt-2 text-xl font-semibold text-white">
-                  ميناء جازان، جازان
+                  {selectedShipment.origin}
                 </p>
               </div>
-              <div>
+              <div className="text-right">
                 <p className="text-sm text-[#8f918b]">محطة الوصول</p>
                 <p className="mt-2 text-xl font-semibold text-white">
-                  السوق المركزي، الرياض
+                  {selectedShipment.destination}
                 </p>
               </div>
-              <div>
+              <div className="text-right">
                 <p className="text-sm text-[#8f918b]">الكمية</p>
-                <p className="mt-2 text-xl font-semibold text-white">30 صندوق</p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {selectedShipment.quantity}
+                </p>
               </div>
-              <div>
+              <div className="text-right">
                 <p className="text-sm text-[#8f918b]">الوزن</p>
-                <p className="mt-2 text-xl font-semibold text-white">112 kg</p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {selectedShipment.weight}
+                </p>
               </div>
             </div>
 
-            <div>
-              <p className="text-sm text-[#8f918b]">التحميل</p>
-              <p className="mt-2 text-xl font-semibold text-white">
-                سوق السمك - جازان
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="text-right">
+                <p className="text-sm text-[#8f918b]">المنتج</p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {selectedShipment.product}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-[#8f918b]">الحالة</p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {selectedShipment.status}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-[#8f918b]">درجة الحرارة</p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {selectedShipment.temperature}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-[#8f918b]">المدى المطلوب</p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {selectedShipment.targetTemperature}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-white/8 bg-[#2a2c27] p-5 text-right">
+              <p className="text-sm text-[#8f918b]">التوصية التشغيلية</p>
+              <p className="mt-2 text-xl font-semibold leading-8 text-white">
+                {selectedShipment.recommendation}
               </p>
             </div>
 
@@ -238,8 +330,10 @@ export default function MapMenuView() {
 
               <div className="flex items-center gap-4 self-start sm:self-auto">
                 <div className="text-right">
-                  <p className="text-2xl font-semibold text-white">عبدالرحمن سامر</p>
-                  <p className="mt-1 text-sm text-[#8f918b]">سائق الشاحنة</p>
+                  <p className="text-2xl font-semibold text-white">
+                    {selectedShipment.driver}
+                  </p>
+                  <p className="mt-1 text-sm text-[#8f918b]">سائق الشحنة</p>
                 </div>
                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#8d7558] text-white">
                   <svg
