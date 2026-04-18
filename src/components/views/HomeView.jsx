@@ -6,6 +6,7 @@ import {
 } from '../../data/appData'
 
 const safetyCircumference = 2 * Math.PI * 44
+const noop = () => {}
 
 function formatShipmentCount(count) {
   if (count === 0) return '0 شحنة'
@@ -364,6 +365,7 @@ export default function HomeView() {
                     </p>
                     <button
                       type="button"
+                      onClick={noop}
                       className="mt-4 rounded-[10px] bg-[#8ca7a2] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#9db7b2]"
                     >
                       {item.action}

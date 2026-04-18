@@ -1,6 +1,6 @@
 import LogoMark from './LogoMark'
 
-export default function HeaderBar({ currentItem }) {
+export default function HeaderBar({ currentItem, onOpenAuth }) {
   return (
     <header className="rounded-[24px] border border-white/8 bg-[#262823] px-4 py-4 shadow-[0_16px_45px_rgba(0,0,0,0.18)] sm:rounded-[28px] sm:px-6 sm:py-5 lg:px-8">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
@@ -20,7 +20,7 @@ export default function HeaderBar({ currentItem }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 xl:min-w-[360px]">
+        <div className="grid gap-3 md:grid-cols-2 xl:min-w-[420px]">
           <div className="rounded-[20px] border border-white/8 bg-[#31342d] px-4 py-3 text-right">
             <p className="text-xs text-[#9a9c95]">الحالة</p>
             <p className="mt-2 text-base font-medium text-white">متصل</p>
@@ -29,6 +29,14 @@ export default function HeaderBar({ currentItem }) {
             <p className="text-xs text-[#9a9c95]">التحديث</p>
             <p className="mt-2 text-base font-medium text-white">مباشر</p>
           </div>
+          <button
+            type="button"
+            onClick={onOpenAuth}
+            className="hidden rounded-[20px] border border-[#8ca7a2]/40 bg-[#31342d] px-4 py-3 text-right transition hover:border-[#8ca7a2]/70 hover:bg-[#373b34] md:col-span-2 md:block"
+          >
+            <p className="text-xs text-[#9a9c95]">الحساب</p>
+            <p className="mt-2 text-base font-medium text-white">فتح تسجيل الدخول أو إنشاء حساب</p>
+          </button>
         </div>
       </div>
     </header>

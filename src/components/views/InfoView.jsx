@@ -32,6 +32,8 @@ const riskCards = [
   },
 ]
 
+const noop = () => {}
+
 export default function InfoView() {
   return (
     <section className="space-y-6">
@@ -176,6 +178,7 @@ export default function InfoView() {
               <div className="mt-6 flex items-center justify-start gap-3">
                 <button
                   type="button"
+                  onClick={noop}
                   className="rounded-[12px] bg-[#86a19b] px-5 py-2 text-sm font-semibold text-white"
                 >
                   تعديل المسار

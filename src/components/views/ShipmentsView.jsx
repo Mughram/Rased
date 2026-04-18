@@ -101,14 +101,34 @@ const shelfLifeToneMap = {
   teal: 'text-[#74f0db]',
 }
 
+const noop = () => {}
+
+const driverNameOverrides = {
+  342: 'عبدالله',
+  267: 'سالم',
+  511: 'محمد',
+  618: 'تركي',
+  724: 'هيثم',
+  805: 'مازن',
+}
+
 export default function ShipmentsView() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('عرض الكل')
   const [activeCategory, setActiveCategory] = useState('all')
   const [selectedShipmentId, setSelectedShipmentId] = useState(shipmentCards[0]?.id ?? null)
 
+  const normalizedShipments = useMemo(
+    () =>
+      shipmentCards.map((shipment) => ({
+        ...shipment,
+        driver: driverNameOverrides[shipment.id] ?? shipment.driver.split(' ')[0],
+      })),
+    [],
+  )
+
   const visibleShipments = useMemo(() => {
-    return shipmentCards.filter((shipment) => {
+    return normalizedShipments.filter((shipment) => {
       const matchesTone =
         !filterToneMap[activeFilter] || shipment.tone === filterToneMap[activeFilter]
       const matchesCategory =
@@ -124,7 +144,7 @@ export default function ShipmentsView() {
 
       return matchesTone && matchesCategory && matchesSearch
     })
-  }, [activeCategory, activeFilter, searchTerm])
+  }, [activeCategory, activeFilter, normalizedShipments, searchTerm])
 
   const effectiveSelectedShipmentId = visibleShipments.some(
     (shipment) => shipment.id === selectedShipmentId,
@@ -229,6 +249,7 @@ export default function ShipmentsView() {
 
             <button
               type="button"
+              onClick={noop}
               className="rounded-[18px] bg-[#8ca7a2] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#9ab4af] sm:text-base"
             >
               تأكيد بدء المراقبة
@@ -432,12 +453,15 @@ export default function ShipmentsView() {
                       </p>
                       <p className="mt-1 text-xs text-[#b5b7b0]">سائق الشحنة</p>
                     </div>
-                    <div className="h-14 w-14 overflow-hidden rounded-[18px] bg-[#22241f] sm:h-16 sm:w-16">
-                      <img
-                        src={shipment.avatar}
-                        alt={shipment.driver}
-                        className="h-full w-full object-cover"
-                      />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#22241f] text-white sm:h-16 sm:w-16">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7 sm:h-8 sm:w-8"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2.1c-4.01 0-7.27 2.9-7.27 6.47 0 .46.37.83.83.83h12.88c.46 0 .83-.37.83-.83 0-3.57-3.26-6.47-7.27-6.47Z" />
+                      </svg>
                     </div>
                   </div>
                 </div>

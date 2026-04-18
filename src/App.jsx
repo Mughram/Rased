@@ -8,7 +8,7 @@ import ViewRouter from './components/views/ViewRouter'
 import { items } from './data/appData'
 
 const FIRST_VISIT_KEY = 'rased-auth-seen'
-const LOADING_DELAY_MS = 1000
+const LOADING_DELAY_MS = 3000
 
 function App() {
   const [activeTab, setActiveTab] = useState('home')
@@ -40,6 +40,11 @@ function App() {
     setShowAuthModal(false)
   }
 
+  function handleOpenAuth(mode = 'signin') {
+    setAuthMode(mode)
+    setShowAuthModal(true)
+  }
+
   return (
     <main
       dir="rtl"
@@ -54,7 +59,7 @@ function App() {
           />
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <HeaderBar currentItem={currentItem} />
+            <HeaderBar currentItem={currentItem} onOpenAuth={handleOpenAuth} />
 
             <section className="mt-5 flex-1 rounded-[28px] border border-white/8 bg-[#2b2d28] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:rounded-[32px] sm:p-8 lg:p-10">
               <ViewRouter activeTab={activeTab} currentItem={currentItem} />

@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import heroTruck from '../../assets/hero.png'
 import { mapShipments } from '../../data/appData'
+
+const driverNameOverrides = {
+  342: 'عبدالله',
+  267: 'سالم',
+  618: 'تركي',
+}
+
+const noop = () => {}
 
 function interpolatePosition(points, progress) {
   const safeProgress = Math.min(Math.max(progress, 0), 1)
@@ -19,10 +26,18 @@ function interpolatePosition(points, progress) {
 
 export default function MapMenuView() {
   const [isTracking, setIsTracking] = useState(true)
-  const [selectedShipmentId, setSelectedShipmentId] = useState(mapShipments[0].id)
+  const normalizedShipments = useMemo(
+    () =>
+      mapShipments.map((shipment) => ({
+        ...shipment,
+        driver: driverNameOverrides[shipment.id] ?? shipment.driver.split(' ')[0],
+      })),
+    [],
+  )
+  const [selectedShipmentId, setSelectedShipmentId] = useState(normalizedShipments[0].id)
   const [progressMap, setProgressMap] = useState(() =>
     Object.fromEntries(
-      mapShipments.map((shipment) => [shipment.id, shipment.progressStart]),
+      normalizedShipments.map((shipment) => [shipment.id, shipment.progressStart]),
     ),
   )
 
@@ -34,7 +49,7 @@ export default function MapMenuView() {
     const intervalId = window.setInterval(() => {
       setProgressMap((current) =>
         Object.fromEntries(
-          mapShipments.map((shipment) => {
+          normalizedShipments.map((shipment) => {
             const next = (current[shipment.id] ?? shipment.progressStart) + shipment.stepSize
             return [shipment.id, next >= 1 ? shipment.progressStart : next]
           }),
@@ -43,10 +58,11 @@ export default function MapMenuView() {
     }, 1400)
 
     return () => window.clearInterval(intervalId)
-  }, [isTracking])
+  }, [isTracking, normalizedShipments])
 
   const selectedShipment =
-    mapShipments.find((shipment) => shipment.id === selectedShipmentId) ?? mapShipments[0]
+    normalizedShipments.find((shipment) => shipment.id === selectedShipmentId) ??
+    normalizedShipments[0]
   const progress = progressMap[selectedShipment.id] ?? selectedShipment.progressStart
   const vehiclePosition = interpolatePosition(selectedShipment.points, progress)
 
@@ -76,7 +92,7 @@ export default function MapMenuView() {
 
           <div className="overflow-x-auto pb-1">
             <div className="flex w-max gap-3">
-              {mapShipments.map((shipment) => (
+              {normalizedShipments.map((shipment) => (
                 <button
                   key={shipment.id}
                   type="button"
@@ -96,16 +112,11 @@ export default function MapMenuView() {
         </div>
       </div>
 
-      <div className="relative h-[280px] overflow-hidden bg-[#4a5568] sm:h-[360px] lg:h-[440px]">
+      <div className="relative h-[260px] overflow-hidden bg-[#4a5568] sm:h-[340px] lg:h-[440px]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(43,220,255,0.12),transparent_24%),radial-gradient(circle_at_78%_18%,rgba(43,220,255,0.1),transparent_20%),linear-gradient(180deg,#465062_0%,#394452_100%)]" />
         <div className="absolute -left-8 top-0 h-[360px] w-[5px] rotate-[14deg] rounded-full bg-[#24b6c7]/55 shadow-[0_0_25px_rgba(36,182,199,0.32)] sm:h-[440px]" />
         <div className="absolute left-[24%] top-[-3%] h-[380px] w-[5px] rotate-[-18deg] rounded-full bg-[#24b6c7]/45 shadow-[0_0_25px_rgba(36,182,199,0.26)] sm:h-[500px]" />
         <div className="absolute right-[8%] top-[-10%] hidden h-[430px] w-[4px] rotate-[24deg] rounded-full bg-[#24b6c7]/25 sm:block" />
-
-        <div className="absolute left-[6%] top-[18%] h-16 w-24 rounded-[20px] bg-[#313947]/70 sm:h-24 sm:w-32 sm:rounded-[24px]" />
-        <div className="absolute left-[42%] top-[8%] h-14 w-20 rounded-[18px] bg-[#2f3744]/65 sm:h-20 sm:w-28 sm:rounded-[20px]" />
-        <div className="absolute right-[10%] top-[20%] h-20 w-24 rounded-[24px] bg-[#303949]/60 sm:h-28 sm:w-36 sm:rounded-[28px]" />
-        <div className="absolute left-[16%] top-[44%] hidden h-20 w-24 rounded-[22px] bg-[#303847]/65 sm:block" />
 
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <polyline
@@ -122,6 +133,7 @@ export default function MapMenuView() {
           <button
             key={point.label}
             type="button"
+            onClick={noop}
             className="absolute -translate-x-1/2 -translate-y-1/2 text-right"
             style={{ left: `${point.left}%`, top: `${point.top}%` }}
           >
@@ -132,7 +144,7 @@ export default function MapMenuView() {
                   : 'border-white/60 bg-white/10'
               }`}
             />
-            <p className="mt-2 hidden whitespace-nowrap rounded-md bg-black/35 px-2 py-1 text-xs text-white/90 sm:block">
+            <p className="mt-2 hidden whitespace-nowrap rounded-md bg-black/35 px-2 py-1 text-xs text-white/90 md:block">
               {point.label}
             </p>
           </button>
@@ -162,13 +174,15 @@ export default function MapMenuView() {
             <p className="text-sm text-[#bfc4c9]">
               شحنة #{selectedShipment.id} • {selectedShipment.categoryLabel}
             </p>
-            <p className="mt-2 text-xl font-semibold text-white">
+            <p className="mt-2 text-lg font-semibold text-white sm:text-xl">
               {selectedShipment.product}
             </p>
-            <p className="mt-2 text-sm leading-7 text-[#d4d9dc]">{selectedShipment.alert}</p>
+            <p className="mt-2 text-sm leading-6 text-[#d4d9dc] sm:leading-7">
+              {selectedShipment.alert}
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3 self-end lg:self-auto">
             <button
               type="button"
               onClick={() => setIsTracking((value) => !value)}
@@ -187,7 +201,7 @@ export default function MapMenuView() {
         <div className="mx-auto mb-5 h-2 w-24 rounded-full bg-white/90 sm:w-28" />
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="rounded-[18px] bg-[#2d302a] px-4 py-3 text-right">
+          <div className="self-end rounded-[18px] bg-[#2d302a] px-4 py-3 text-right sm:self-auto">
             <p className="text-xs text-[#99a29d]">آخر تحديث</p>
             <p className="mt-1 text-lg font-semibold text-white">
               {selectedShipment.lastUpdate}
@@ -219,15 +233,7 @@ export default function MapMenuView() {
           />
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(220px,280px)_minmax(0,1fr)]">
-          <div className="flex items-end justify-center rounded-[24px] bg-[#2a2c27] p-4">
-            <img
-              src={heroTruck}
-              alt="شاحنة الشحنة"
-              className="h-auto w-full max-w-[220px] object-contain"
-            />
-          </div>
-
+        <div className="mt-6 grid gap-6">
           <div className="grid gap-6">
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <DetailBlock label="محطة الانطلاق" value={selectedShipment.origin} />
@@ -304,16 +310,16 @@ function StatCard({ label, value }) {
   return (
     <div className="rounded-[20px] bg-[#2a2c27] p-4 text-right">
       <p className="text-sm text-[#8f918b]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{value}</p>
+      <p className="mt-2 text-xl font-semibold text-white sm:text-3xl">{value}</p>
     </div>
   )
 }
 
 function DetailBlock({ label, value }) {
   return (
-    <div className="text-right">
+    <div className="rounded-[18px] bg-[#252721] p-4 text-right">
       <p className="text-sm text-[#8f918b]">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-white sm:text-xl">{value}</p>
+      <p className="mt-2 text-base font-semibold leading-7 text-white sm:text-xl">{value}</p>
     </div>
   )
 }
