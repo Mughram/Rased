@@ -11,6 +11,16 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+.npmrc
+.pnpm-store/
+coverage/
+*.pem
+*.key
+*.p12
+*.crt
 
 # Editor directories and files
 .vscode/*
