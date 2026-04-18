@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { coldChainCategories, shipmentCards, shipmentFilters } from '../../data/appData'
 
 const filterToneMap = {
@@ -126,23 +126,14 @@ export default function ShipmentsView() {
     })
   }, [activeCategory, activeFilter, searchTerm])
 
-  useEffect(() => {
-    if (!visibleShipments.length) {
-      setSelectedShipmentId(null)
-      return
-    }
-
-    const hasSelectedShipment = visibleShipments.some(
-      (shipment) => shipment.id === selectedShipmentId,
-    )
-
-    if (!hasSelectedShipment) {
-      setSelectedShipmentId(visibleShipments[0].id)
-    }
-  }, [selectedShipmentId, visibleShipments])
+  const effectiveSelectedShipmentId = visibleShipments.some(
+    (shipment) => shipment.id === selectedShipmentId,
+  )
+    ? selectedShipmentId
+    : (visibleShipments[0]?.id ?? null)
 
   const selectedShipment =
-    visibleShipments.find((shipment) => shipment.id === selectedShipmentId) ??
+    visibleShipments.find((shipment) => shipment.id === effectiveSelectedShipmentId) ??
     visibleShipments[0] ??
     null
 
@@ -339,7 +330,7 @@ export default function ShipmentsView() {
 
       <div className="space-y-4 sm:space-y-5">
         {visibleShipments.map((shipment) => {
-          const isSelected = shipment.id === selectedShipmentId
+          const isSelected = shipment.id === effectiveSelectedShipmentId
 
           return (
             <article

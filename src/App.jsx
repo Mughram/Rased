@@ -13,7 +13,13 @@ const LOADING_DELAY_MS = 1000
 function App() {
   const [activeTab, setActiveTab] = useState('home')
   const [authMode, setAuthMode] = useState('signin')
-  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+
+    return !window.localStorage.getItem(FIRST_VISIT_KEY)
+  })
   const [isLoading, setIsLoading] = useState(true)
   const currentItem = items.find((item) => item.id === activeTab) ?? items[0]
 
@@ -21,12 +27,6 @@ function App() {
     const loadingTimer = window.setTimeout(() => {
       setIsLoading(false)
     }, LOADING_DELAY_MS)
-
-    const hasSeenAuth = window.localStorage.getItem(FIRST_VISIT_KEY)
-
-    if (!hasSeenAuth) {
-      setShowAuthModal(true)
-    }
 
     return () => window.clearTimeout(loadingTimer)
   }, [])
